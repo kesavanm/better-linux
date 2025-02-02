@@ -3,6 +3,7 @@ import psutil
 import platform
 import socket
 import datetime
+from tkinter import ttk  # Import ttk for notebook (tabbed interface)
 
 class SystemInfoGUI:
     def __init__(self, master):
@@ -10,9 +11,29 @@ class SystemInfoGUI:
         master.title("System Information")
         master.geometry("500x600")
 
-        # Create a text widget to display system info
-        self.info_text = tk.Text(master, height=30, width=60, font=("Courier", 10))
+        # Create notebook (tabbed interface)
+        self.notebook = ttk.Notebook(master)
+        self.notebook.pack(expand=True, fill='both', padx=10, pady=10)
+
+        # Create first tab for System Info
+        self.system_info_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.system_info_frame, text="System Info")
+
+        # Create a text widget to display system info in the first tab
+        self.info_text = tk.Text(self.system_info_frame, height=25, width=60, font=("Courier", 10))
         self.info_text.pack(padx=10, pady=10)
+
+        # Create second tab labeled "Extra"
+        self.extra_frame = ttk.Frame(self.notebook)
+        self.notebook.add(self.extra_frame, text="Extra")
+
+        # Add a label to the Extra tab (placeholder content)
+        self.extra_label = tk.Label(self.extra_frame, text="Extra Information Coming Soon!", font=("Courier", 12))
+        self.extra_label.pack(expand=True)
+
+        # Create an exit button
+        self.exit_button = tk.Button(master, text="Exit", command=self.exit_application)
+        self.exit_button.pack(pady=10)
 
         # Populate system information
         self.update_system_info()
@@ -60,6 +81,10 @@ class SystemInfoGUI:
         # Insert information into text widget
         for line in info:
             self.info_text.insert(tk.END, line + "\n")
+
+    def exit_application(self):
+        # Close the application
+        self.master.destroy()
 
 def main():
     root = tk.Tk()
