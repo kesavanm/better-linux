@@ -6,8 +6,20 @@
 
 ### Features
 - System information - OS, CPU, Memory, Disk
-- Extra Tools  - 
-- Additional tools
+- Extra Tools  - Listing of available tools - cowsay, fortune, lolcat, duf, bat, ncdu, htop, sl, toilet, sysvbanner, figlet, boxes
+- Additional tools - Installation of available tools.  User can install or uninstall tools. This includes cowsay, fortune, lolcat, duf, bat, ncdu, htop, sl, toilet, sysvbanner, figlet, boxes
+
+
+### Pre-requisites
+- Python 3.6 or higher
+- pip installed
+
+### Installation
+- `pip install -r requirements.txt`
+
+
+### Usage
+- Run the application : `python3 better-linux.py`
 
 
 
@@ -25,11 +37,3 @@
 
 ![Additional Tools](screenshots/additional-tools.png)
 
-> **Note**: Screenshots are not yet available. To generate screenshots:
-> 1. Run the application
-> 2. Take screenshots of each tab
-> 3. Save them in a `screenshots` directory with the following names:
->    - `system_info.png`
->    - `tools_version.png`
->    - `additional_tools.png`
-{{ ... }}

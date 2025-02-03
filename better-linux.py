@@ -36,13 +36,17 @@ class SystemInfoGUI:
         self.extra_label.destroy()
 
         # Create a Treeview widget for tools table
-        self.tools_table = ttk.Treeview(self.extra_frame, columns=('Tool', 'Version'), show='headings')
+        self.tools_table = ttk.Treeview(self.extra_frame, columns=('SNo', 'Tool', 'Version'), show='headings')
+        self.tools_table.heading('SNo', text='S.No')
         self.tools_table.heading('Tool', text='Tool')
         self.tools_table.heading('Version', text='Version')
+        
+        # Configure column widths
+        self.tools_table.column('SNo', width=50, anchor='center')
+        self.tools_table.column('Tool', width=150)
+        self.tools_table.column('Version', width=250)
+        
         self.tools_table.pack(padx=10, pady=10, expand=True, fill='both')
-
-        # Populate tools table
-        self.populate_tools_table()
 
         # Create third tab labeled "Additional Tools"
         self.additional_tools_frame = ttk.Frame(self.notebook)
@@ -50,8 +54,9 @@ class SystemInfoGUI:
 
         # Create a Treeview widget for additional tools table
         self.additional_tools_table = ttk.Treeview(self.additional_tools_frame, 
-                                                   columns=('Tool', 'Installed', 'Version', 'Install', 'Uninstall'), 
+                                                   columns=('SNo', 'Tool', 'Installed', 'Version', 'Install', 'Uninstall'), 
                                                    show='headings')
+        self.additional_tools_table.heading('SNo', text='S.No')
         self.additional_tools_table.heading('Tool', text='Tool')
         self.additional_tools_table.heading('Installed', text='Installed')
         self.additional_tools_table.heading('Version', text='Version')
@@ -59,6 +64,7 @@ class SystemInfoGUI:
         self.additional_tools_table.heading('Uninstall', text='Uninstall')
         
         # Configure column widths
+        self.additional_tools_table.column('SNo', width=50, anchor='center')
         self.additional_tools_table.column('Tool', width=100)
         self.additional_tools_table.column('Installed', width=80)
         self.additional_tools_table.column('Version', width=100)
@@ -78,6 +84,9 @@ class SystemInfoGUI:
             command=self.refresh_additional_tools
         )
         self.refresh_button.pack(side=tk.LEFT, padx=5)
+
+        # Populate tools table
+        self.populate_tools_table()
 
         # Populate additional tools table
         self.populate_additional_tools_table()
@@ -155,9 +164,9 @@ class SystemInfoGUI:
                 return 'N/A'
 
         # Populate the table
-        for tool in tools_to_check:
+        for index, tool in enumerate(tools_to_check, 1):
             version = get_tool_version(tool)
-            self.tools_table.insert('', 'end', values=(tool, version))
+            self.tools_table.insert('', 'end', values=(index, tool, version))
 
     def populate_additional_tools_table(self):
         # List of additional tools to check
@@ -212,12 +221,13 @@ class SystemInfoGUI:
                 return 'N/A'
 
         # Populate the table
-        for tool in additional_tools:
+        for index, tool in enumerate(additional_tools, 1):
             installed = is_tool_installed(tool)
             version = get_tool_version(tool) if installed == 'Yes' else 'N/A'
             
             # Insert row with install/uninstall buttons
             item = self.additional_tools_table.insert('', 'end', values=(
+                index,
                 tool, 
                 installed, 
                 version, 
@@ -260,10 +270,10 @@ class SystemInfoGUI:
         x, y, width, height = self.additional_tools_table.bbox(item, column)
         
         # Position and show the appropriate button
-        if column == '#4':  # Install column
+        if column == '#5':  # Install column
             install_button.place(x=x, y=y, width=width, height=height)
             uninstall_button.place_forget()
-        elif column == '#5':  # Uninstall column
+        elif column == '#6':  # Uninstall column
             uninstall_button.place(x=x, y=y, width=width, height=height)
             install_button.place_forget()
         else:
