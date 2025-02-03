@@ -35,3 +35,7 @@ A comprehensive system information and tool management application for Linux, de
 ### Additional Tools
 
 ![Additional Tools](screenshots/additional-tools.png)
+
+### Credits
+- Kesavan (https://github.com/kesavan)
+![Credits](screenshots/better-linux.png)
