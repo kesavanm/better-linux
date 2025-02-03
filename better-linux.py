@@ -50,29 +50,24 @@ class SystemInfoGUI:
 
         # Create a Treeview widget for additional tools table
         self.additional_tools_table = ttk.Treeview(self.additional_tools_frame, 
-                                                   columns=('Tool', 'Installed', 'Version'), 
+                                                   columns=('Tool', 'Installed', 'Version', 'Actions'), 
                                                    show='headings')
         self.additional_tools_table.heading('Tool', text='Tool')
         self.additional_tools_table.heading('Installed', text='Installed')
         self.additional_tools_table.heading('Version', text='Version')
+        self.additional_tools_table.heading('Actions', text='Actions')
+        
+        # Configure column widths
+        self.additional_tools_table.column('Tool', width=100)
+        self.additional_tools_table.column('Installed', width=80)
+        self.additional_tools_table.column('Version', width=100)
+        self.additional_tools_table.column('Actions', width=150)
+        
         self.additional_tools_table.pack(padx=10, pady=10, expand=True, fill='both')
 
-        # Create frame for buttons
-        self.additional_tools_button_frame = ttk.Frame(self.additional_tools_frame)
-        self.additional_tools_button_frame.pack(pady=10)
-
-        # Install button
-        self.install_button = ttk.Button(self.additional_tools_button_frame, 
-                                         text="Install Selected Tool", 
-                                         command=self.install_selected_tool)
-        self.install_button.pack(side=tk.LEFT, padx=5)
-
-        # Version Info button
-        self.version_button = ttk.Button(self.additional_tools_button_frame, 
-                                         text="Show Version", 
-                                         command=self.show_tool_version)
-        self.version_button.pack(side=tk.LEFT, padx=5)
-
+        # Remove the previous buttons frame
+        # self.additional_tools_button_frame.destroy()
+        
         # Populate additional tools table
         self.populate_additional_tools_table()
 
@@ -155,33 +150,11 @@ class SystemInfoGUI:
 
     def populate_additional_tools_table(self):
         # List of additional tools to check
-
-	# # tools
-	# sudo apt install autoconf build-essential curl wget dos2unix gcc git
-	# sudo apt install libncurses-dev make
-	# sudo apt install make-guile x11-xserver-utils net-tools
-
-	# # media
-	# sudo apt install ffmpeg
-
-	# # funtime
-	# sudo apt install bat cowsay fortune lolcat sl
-	# sudo apt install toilet sysvbanner figlet boxes
-
-	# # extra
-	# sudo apt install ncdu
-
-
-
-
-
         additional_tools = [
-            'cowsay', 'fortune', 'lolcat', 'duf' , 'bat' , 'ncdu', 'htop', 'sl', 'toilet', 'sysvbanner', 'figlet', 'boxes',
-            'autoconf', 'build-essential', 'curl', 'wget', 'dos2unix', 'gcc', 'git', 'libncurses-dev', 'make', 'x11-xserver-utils', 'net-tools',
-            'ffmpeg',
-            'bat', 'cowsay', 'fortune', 'lolcat', 'sl',
-            'toilet', 'sysvbanner', 'figlet', 'boxes',
-            'ncdu'
+            'cowsay', 'fortune', 'lolcat', 'duf', 'bat', 'ncdu', 'htop', 'sl', 
+            'toilet', 'sysvbanner', 'figlet', 'boxes', 'autoconf', 'build-essential', 
+            'curl', 'wget', 'dos2unix', 'gcc', 'git', 'libncurses-dev', 'make', 
+            'x11-xserver-utils', 'net-tools', 'ffmpeg'
         ]
 
         # Function to check if tool is installed
@@ -231,52 +204,82 @@ class SystemInfoGUI:
         for tool in additional_tools:
             installed = is_tool_installed(tool)
             version = get_tool_version(tool) if installed == 'Yes' else 'N/A'
-            self.additional_tools_table.insert('', 'end', values=(tool, installed, version))
+            
+            # Insert row with install/uninstall buttons
+            item = self.additional_tools_table.insert('', 'end', values=(tool, installed, version, ''))
+            
+            # Create buttons for each row
+            install_button = ttk.Button(self.additional_tools_table, 
+                                        text='Install' if installed == 'No' else 'Uninstall', 
+                                        command=lambda t=tool: self.toggle_tool_installation(t))
+            
+            # Add buttons to the table
+            self.additional_tools_table.set(item, 'Actions', 'Buttons')
+            self.additional_tools_table.item(item, tags=(item,))
+            self.additional_tools_table.tag_bind(item, '<Button-1>', 
+                                                 lambda event, btn=install_button: self.show_button(event, btn))
 
-    def install_selected_tool(self):
-        # Get the selected tool
-        selected_item = self.additional_tools_table.selection()
-        if not selected_item:
-            tk.messagebox.showwarning("Warning", "Please select a tool to install")
+    def show_button(self, event, button):
+        # Get the item under the mouse
+        item = self.additional_tools_table.identify_row(event.y)
+        if not item:
             return
 
-        # Get the tool name
-        tool = self.additional_tools_table.item(selected_item)['values'][0]
+        # Get the bounding rectangle for the 'Actions' column
+        x, y, width, height = self.additional_tools_table.bbox(item, 'Actions')
+        
+        # Position and show the button
+        button.place(x=x, y=y, width=width, height=height)
 
-        # Prepare installation command based on the tool
+    def toggle_tool_installation(self, tool):
+        # Prepare installation/uninstallation commands
         install_commands = {
-            'cowsay': 'sudo apt-get install -y cowsay',
-            'fortune': 'sudo apt-get install -y fortune-mod',
-            'lolcat': 'sudo gem install lolcat',
-            'duf': 'wget https://github.com/muesli/duf/releases/download/v0.8.1/duf_0.8.1_linux_amd64.deb && sudo dpkg -i duf_0.8.1_linux_amd64.deb'
+            'cowsay': ('sudo apt-get install -y cowsay', 'sudo apt-get remove -y cowsay'),
+            'fortune': ('sudo apt-get install -y fortune-mod', 'sudo apt-get remove -y fortune-mod'),
+            'lolcat': ('sudo gem install lolcat', 'sudo gem uninstall -y lolcat'),
+            'duf': (
+                'wget https://github.com/muesli/duf/releases/download/v0.8.1/duf_0.8.1_linux_amd64.deb && sudo dpkg -i duf_0.8.1_linux_amd64.deb',
+                'sudo dpkg -r duf'
+            ),
+            # Add more tools with their install/uninstall commands
+            'bat': ('sudo apt-get install -y bat', 'sudo apt-get remove -y bat'),
+            'ncdu': ('sudo apt-get install -y ncdu', 'sudo apt-get remove -y ncdu'),
+            'htop': ('sudo apt-get install -y htop', 'sudo apt-get remove -y htop'),
+            'sl': ('sudo apt-get install -y sl', 'sudo apt-get remove -y sl'),
+            'toilet': ('sudo apt-get install -y toilet', 'sudo apt-get remove -y toilet'),
+            'sysvbanner': ('sudo apt-get install -y sysvbanner', 'sudo apt-get remove -y sysvbanner'),
+            'figlet': ('sudo apt-get install -y figlet', 'sudo apt-get remove -y figlet'),
+            'boxes': ('sudo apt-get install -y boxes', 'sudo apt-get remove -y boxes'),
         }
 
         try:
-            # Run the installation command
-            subprocess.run(install_commands[tool], shell=True, check=True)
+            # Check current installation status
+            is_installed = subprocess.run(['which', tool], 
+                                          capture_output=True, 
+                                          text=True).returncode == 0
+
+            # Choose the appropriate command
+            command = install_commands.get(tool, (None, None))
             
-            # Refresh the table after installation
+            if is_installed:
+                # Uninstall
+                subprocess.run(command[1], shell=True, check=True)
+                action = "uninstalled"
+            else:
+                # Install
+                subprocess.run(command[0], shell=True, check=True)
+                action = "installed"
+            
+            # Refresh the table
             self.additional_tools_table.delete(*self.additional_tools_table.get_children())
             self.populate_additional_tools_table()
             
-            tk.messagebox.showinfo("Success", f"{tool} installed successfully!")
-        except subprocess.CalledProcessError:
-            tk.messagebox.showerror("Error", f"Failed to install {tool}")
-
-    def show_tool_version(self):
-        # Get the selected tool
-        selected_item = self.additional_tools_table.selection()
-        if not selected_item:
-            tk.messagebox.showwarning("Warning", "Please select a tool")
-            return
-
-        # Get the tool name and current version
-        tool, installed, version = self.additional_tools_table.item(selected_item)['values']
+            messagebox.showinfo("Success", f"{tool} {action} successfully!")
         
-        if installed == 'No':
-            tk.messagebox.showinfo("Version Info", f"{tool} is not installed")
-        else:
-            tk.messagebox.showinfo("Version Info", f"{tool} version: {version}")
+        except subprocess.CalledProcessError:
+            messagebox.showerror("Error", f"Failed to {'uninstall' if is_installed else 'install'} {tool}")
+        except Exception as e:
+            messagebox.showerror("Error", str(e))
 
     def exit_application(self):
         # Close the application
