@@ -50,24 +50,35 @@ class SystemInfoGUI:
 
         # Create a Treeview widget for additional tools table
         self.additional_tools_table = ttk.Treeview(self.additional_tools_frame, 
-                                                   columns=('Tool', 'Installed', 'Version', 'Actions'), 
+                                                   columns=('Tool', 'Installed', 'Version', 'Install', 'Uninstall'), 
                                                    show='headings')
         self.additional_tools_table.heading('Tool', text='Tool')
         self.additional_tools_table.heading('Installed', text='Installed')
         self.additional_tools_table.heading('Version', text='Version')
-        self.additional_tools_table.heading('Actions', text='Actions')
+        self.additional_tools_table.heading('Install', text='Install')
+        self.additional_tools_table.heading('Uninstall', text='Uninstall')
         
         # Configure column widths
         self.additional_tools_table.column('Tool', width=100)
         self.additional_tools_table.column('Installed', width=80)
         self.additional_tools_table.column('Version', width=100)
-        self.additional_tools_table.column('Actions', width=150)
+        self.additional_tools_table.column('Install', width=75)
+        self.additional_tools_table.column('Uninstall', width=75)
         
         self.additional_tools_table.pack(padx=10, pady=10, expand=True, fill='both')
 
-        # Remove the previous buttons frame
-        # self.additional_tools_button_frame.destroy()
-        
+        # Create a frame for buttons
+        self.additional_tools_button_frame = ttk.Frame(self.additional_tools_frame)
+        self.additional_tools_button_frame.pack(pady=10)
+
+        # Refresh button
+        self.refresh_button = ttk.Button(
+            self.additional_tools_button_frame, 
+            text="Refresh Tools List", 
+            command=self.refresh_additional_tools
+        )
+        self.refresh_button.pack(side=tk.LEFT, padx=5)
+
         # Populate additional tools table
         self.populate_additional_tools_table()
 
@@ -206,32 +217,60 @@ class SystemInfoGUI:
             version = get_tool_version(tool) if installed == 'Yes' else 'N/A'
             
             # Insert row with install/uninstall buttons
-            item = self.additional_tools_table.insert('', 'end', values=(tool, installed, version, ''))
+            item = self.additional_tools_table.insert('', 'end', values=(
+                tool, 
+                installed, 
+                version, 
+                'Install' if installed == 'No' else '', 
+                'Uninstall' if installed == 'Yes' else ''
+            ))
             
             # Create buttons for each row
-            install_button = ttk.Button(self.additional_tools_table, 
-                                        text='Install' if installed == 'No' else 'Uninstall', 
-                                        command=lambda t=tool: self.toggle_tool_installation(t))
+            install_button = ttk.Button(
+                self.additional_tools_table, 
+                text='Install', 
+                command=lambda t=tool: self.toggle_tool_installation(t, 'install')
+            )
+            
+            uninstall_button = ttk.Button(
+                self.additional_tools_table, 
+                text='Uninstall', 
+                command=lambda t=tool: self.toggle_tool_installation(t, 'uninstall')
+            )
             
             # Add buttons to the table
-            self.additional_tools_table.set(item, 'Actions', 'Buttons')
             self.additional_tools_table.item(item, tags=(item,))
+            
+            # Bind events for dynamic button placement
             self.additional_tools_table.tag_bind(item, '<Button-1>', 
-                                                 lambda event, btn=install_button: self.show_button(event, btn))
+                                                 lambda event, 
+                                                 install_btn=install_button, 
+                                                 uninstall_btn=uninstall_button: 
+                                                 self.show_button(event, install_btn, uninstall_btn))
 
-    def show_button(self, event, button):
+    def show_button(self, event, install_button, uninstall_button):
         # Get the item under the mouse
         item = self.additional_tools_table.identify_row(event.y)
+        column = self.additional_tools_table.identify_column(event.x)
+        
         if not item:
             return
 
-        # Get the bounding rectangle for the 'Actions' column
-        x, y, width, height = self.additional_tools_table.bbox(item, 'Actions')
+        # Get the bounding rectangle for the 'Install' or 'Uninstall' column
+        x, y, width, height = self.additional_tools_table.bbox(item, column)
         
-        # Position and show the button
-        button.place(x=x, y=y, width=width, height=height)
+        # Position and show the appropriate button
+        if column == '#4':  # Install column
+            install_button.place(x=x, y=y, width=width, height=height)
+            uninstall_button.place_forget()
+        elif column == '#5':  # Uninstall column
+            uninstall_button.place(x=x, y=y, width=width, height=height)
+            install_button.place_forget()
+        else:
+            install_button.place_forget()
+            uninstall_button.place_forget()
 
-    def toggle_tool_installation(self, tool):
+    def toggle_tool_installation(self, tool, action):
         # Prepare installation/uninstallation commands
         install_commands = {
             'cowsay': ('sudo apt-get install -y cowsay', 'sudo apt-get remove -y cowsay'),
@@ -253,33 +292,42 @@ class SystemInfoGUI:
         }
 
         try:
-            # Check current installation status
-            is_installed = subprocess.run(['which', tool], 
-                                          capture_output=True, 
-                                          text=True).returncode == 0
-
-            # Choose the appropriate command
+            # Choose the appropriate command based on action
             command = install_commands.get(tool, (None, None))
             
-            if is_installed:
-                # Uninstall
-                subprocess.run(command[1], shell=True, check=True)
-                action = "uninstalled"
-            else:
+            if action == 'install':
                 # Install
                 subprocess.run(command[0], shell=True, check=True)
-                action = "installed"
+                action_text = "installed"
+            else:
+                # Uninstall
+                subprocess.run(command[1], shell=True, check=True)
+                action_text = "uninstalled"
             
             # Refresh the table
             self.additional_tools_table.delete(*self.additional_tools_table.get_children())
             self.populate_additional_tools_table()
             
-            messagebox.showinfo("Success", f"{tool} {action} successfully!")
+            messagebox.showinfo("Success", f"{tool} {action_text} successfully!")
         
         except subprocess.CalledProcessError:
-            messagebox.showerror("Error", f"Failed to {'uninstall' if is_installed else 'install'} {tool}")
+            messagebox.showerror("Error", f"Failed to {action} {tool}")
         except Exception as e:
             messagebox.showerror("Error", str(e))
+
+    def refresh_additional_tools(self):
+        try:
+            # Clear the current table
+            self.additional_tools_table.delete(*self.additional_tools_table.get_children())
+            
+            # Repopulate the table
+            self.populate_additional_tools_table()
+            
+            # Show a success message
+            messagebox.showinfo("Refresh", "Tools list updated successfully!")
+        
+        except Exception as e:
+            messagebox.showerror("Refresh Error", f"Failed to refresh tools list: {str(e)}")
 
     def exit_application(self):
         # Close the application
