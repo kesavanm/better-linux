@@ -1,8 +1,7 @@
-# better-linux
-{{ ... }}
+# Kesavan's Better Gnu/Linux !
 
-
-### Better Linux is a Python application that provides system information, tools versions, and additional tools.
+## Overview
+A comprehensive system information and tool management application for Linux, designed to provide an intuitive and powerful interface for system insights.
 
 ### Features
 - System information - OS, CPU, Memory, Disk
@@ -36,4 +35,3 @@
 ### Additional Tools
 
 ![Additional Tools](screenshots/additional-tools.png)
-
