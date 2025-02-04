@@ -1,0 +1,4 @@
+#!/bin/bash
+set -e
+# Remove virtual environment
+rm -rf /usr/share/better-linux/venv

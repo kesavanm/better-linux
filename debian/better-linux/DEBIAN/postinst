@@ -1,0 +1,13 @@
+#!/bin/bash
+set -e
+
+# Try system package first
+if ! dpkg -s python3-pil python3-pillow >/dev/null 2>&1; then
+    # If system package not available, install via pip
+    python3 -m pip install Pillow
+fi
+
+# Create virtual environment and install dependencies
+python3 -m venv /usr/share/better-linux/venv
+/usr/share/better-linux/venv/bin/pip install psutil pillow ttkbootstrap
+chmod +x /usr/bin/better-linux

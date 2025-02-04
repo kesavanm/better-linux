@@ -1,0 +1,2 @@
+#!/bin/bash
+/usr/share/better-linux/venv/bin/python /usr/share/better-linux/better-linux.py

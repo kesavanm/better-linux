@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Better Gnu/Linux
+Comment=System Information and Tool Management
+Exec=better-linux
+Icon=better-linux
+Terminal=false
+Type=Application
+Categories=System;

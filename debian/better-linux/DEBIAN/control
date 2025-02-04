@@ -1,0 +1,13 @@
+Package: better-linux
+Version: 1.0.0
+Section: utils
+Priority: optional
+Architecture: all
+Depends: python3 (>= 3.8), python3-tk, python3-psutil, python3-pil | python3-pillow | python3-pil-tk | python3-pil-dbg | python3-pillow
+Recommends: ttkbootstrap
+Maintainer: Kesavan Muthuvel <hi@kesavan.info>
+Description: System Information and Tool Management Application
+ Better Gnu/Linux is a comprehensive system information 
+ and tool management application for Linux, providing 
+ an intuitive interface for system insights.
+Homepage: https://github.com/kesavanm/better-linux
