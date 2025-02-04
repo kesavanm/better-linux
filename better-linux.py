@@ -20,7 +20,7 @@ except ImportError:
 class SystemInfoGUI:
     def __init__(self, master):
         self.master = master
-        master.title("Kesavan's Better Gnu/Linux !")
+        master.title("Better Gnu/Linux !")
         master.geometry("500x600")
 
         # Create notebook (tabbed interface)
@@ -220,6 +220,103 @@ Thank you for using Better Linux!
 
         # Populate system information
         self.update_system_info()
+
+        # Create a Tips tab
+        self.create_tips_tab()
+
+    def create_tips_tab(self):
+        """
+        Create a Tips tab with package management guidance
+        """
+        # Create Tips frame
+        self.tips_frame = ttk_theme.Frame(self.notebook)
+        self.notebook.add(self.tips_frame, text="Tips")
+
+        # Create a text widget for tips
+        self.tips_text = tk.Text(
+            self.tips_frame, 
+            height=25, 
+            width=60, 
+            font=("Courier", 10), 
+            wrap=tk.WORD,
+            state=tk.DISABLED  # Start in read-only mode
+        )
+        self.tips_text.pack(padx=10, pady=10, expand=True, fill='both')
+
+        # Prepare tips content
+        tips_content = """ Linux Package Management Tips 
+
+1. Manual Tool Installation
+   To install a tool manually, use:
+   sudo apt install [package-name]
+   Examples:
+     sudo apt install bat
+     sudo apt install fortune
+     sudo apt install htop
+
+2. Manual Tool Removal
+   To remove a tool manually, use:
+   sudo apt remove [package-name]
+   Examples:
+     sudo apt remove fortune
+     sudo apt remove bat
+     sudo apt remove htop
+
+3. System Cleanup Commands
+   a) Remove downloaded package files:
+      sudo apt autoclean
+      Removes .deb files for packages that can't be downloaded anymore
+
+   b) Remove unnecessary packages:
+      sudo apt autoremove
+      Removes packages installed as dependencies 
+      that are no longer needed
+
+4. System Update Best Practices
+   sudo apt update
+     - Refreshes package list
+     - Checks for available updates
+     - ALWAYS run before upgrade
+
+   sudo apt upgrade
+     - Actually installs available updates
+     - Recommended to run regularly
+
+5. Recommended Update Frequency
+   Update weekly
+   Upgrade monthly
+   Autoremove quarterly
+
+6. Pro Tips
+   Keep your system updated
+   Remove unused packages
+   Clean package cache regularly
+   Always backup important data before major updates
+
+ Maintain a clean, efficient Linux system!"""
+
+        # Enable text widget for editing
+        self.tips_text.config(state=tk.NORMAL)
+        self.tips_text.delete(1.0, tk.END)
+        self.tips_text.insert(tk.END, tips_content)
+        self.tips_text.config(state=tk.DISABLED)
+
+        # Add a copy button for tips
+        self.copy_tips_button = ttk_theme.Button(
+            self.tips_frame, 
+            text="Copy Tips", 
+            command=self.copy_tips
+        )
+        self.copy_tips_button.pack(pady=5)
+
+    def copy_tips(self):
+        """
+        Copy tips content to clipboard
+        """
+        tips_content = self.tips_text.get(1.0, tk.END).strip()
+        self.master.clipboard_clear()
+        self.master.clipboard_append(tips_content)
+        self.log_to_console("Tips copied to clipboard", "success")
 
     def update_system_info(self):
         # Clear previous text
@@ -628,6 +725,74 @@ Thank you for using Better Linux!
             self.log_to_console(f"Error getting {tool} version: {str(e)}", "error")
             return 'N/A'
 
+    def prompt_sudo_password(self):
+        """
+        Prompt for sudo password using a GUI dialog
+        Returns the password or None if cancelled
+        """
+        password = simpledialog.askstring(
+            "Sudo Authentication", 
+            "Enter sudo password:", 
+            show='*'  # Mask the password
+        )
+        return password
+
+    def run_sudo_command(self, command, package=None):
+        """
+        Run a sudo command with GUI-based password authentication
+        
+        Args:
+            command (list): Command to run with sudo
+            package (str, optional): Package name for context
+        
+        Returns:
+            subprocess.CompletedProcess: Result of the command
+        """
+        try:
+            # First, try running without password (in case of cached credentials)
+            result = subprocess.run(
+                ['sudo', '-n', 'true'], 
+                capture_output=True, 
+                text=True
+            )
+            
+            # If sudo requires password
+            if result.returncode != 0:
+                # Prompt for password
+                password = self.prompt_sudo_password()
+                
+                if not password:
+                    # User cancelled
+                    self.log_to_console(f"Sudo authentication cancelled for {package or 'command'}", "error")
+                    return None
+                
+                # Run command with provided password
+                result = subprocess.run(
+                    ['sudo', '-S'] + command, 
+                    input=password + '\n', 
+                    capture_output=True, 
+                    text=True
+                )
+            else:
+                # Run command without password
+                result = subprocess.run(
+                    ['sudo'] + command, 
+                    capture_output=True, 
+                    text=True
+                )
+            
+            # Log the result
+            if result.returncode == 0:
+                self.log_to_console(f"Sudo command for {package or 'command'} successful", "success")
+            else:
+                self.log_to_console(f"Sudo command for {package or 'command'} failed: {result.stderr}", "error")
+            
+            return result
+        
+        except Exception as e:
+            self.log_to_console(f"Error running sudo command: {str(e)}", "error")
+            return None
+
     def install_tool(self, tool):
         def install_thread():
             try:
@@ -636,20 +801,16 @@ Thank you for using Better Linux!
                 self.log_to_console(status_message)
 
                 # Run installation command
-                result = subprocess.run(
-                    ['sudo', 'apt-get', 'install', '-y', tool['package']], 
-                    capture_output=True, 
-                    text=True
-                )
+                result = self.run_sudo_command(['apt-get', 'install', '-y', tool['package']], tool['name'])
                 
                 # Log stdout and stderr
-                if result.stdout:
+                if result and result.stdout:
                     self.log_to_console(f"STDOUT: {result.stdout}", "info")
-                if result.stderr:
+                if result and result.stderr:
                     self.log_to_console(f"STDERR: {result.stderr}", "error")
 
                 # Check installation status
-                if result.returncode == 0:
+                if result and result.returncode == 0:
                     success_message = f"{tool['name']} installed successfully!"
                     self.update_status(success_message)
                     self.log_to_console(success_message, "success")
@@ -675,20 +836,16 @@ Thank you for using Better Linux!
                 self.log_to_console(status_message)
 
                 # Run uninstallation command
-                result = subprocess.run(
-                    ['sudo', 'apt-get', 'remove', '-y', tool['package']], 
-                    capture_output=True, 
-                    text=True
-                )
+                result = self.run_sudo_command(['apt-get', 'remove', '-y', tool['package']], tool['name'])
                 
                 # Log stdout and stderr
-                if result.stdout:
+                if result and result.stdout:
                     self.log_to_console(f"STDOUT: {result.stdout}", "info")
-                if result.stderr:
+                if result and result.stderr:
                     self.log_to_console(f"STDERR: {result.stderr}", "error")
 
                 # Check uninstallation status
-                if result.returncode == 0:
+                if result and result.returncode == 0:
                     success_message = f"{tool['name']} uninstalled successfully!"
                     self.update_status(success_message)
                     self.log_to_console(success_message, "success")

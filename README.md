@@ -39,3 +39,12 @@ A comprehensive system information and tool management application for Linux, de
 ### Credits
 - Kesavan (https://github.com/kesavan)
 ![Credits](screenshots/better-linux.png)
+
+### Tips
+- Maintain a clean, efficient Linux system!
+- Always backup important data before major updates
+- Run `apt update` and `apt upgrade` regularly
+- Remove unused packages using `apt autoremove`
+- Clean package cache with `apt autoclean`
+
+![Tips](screenshots/tips.png)
