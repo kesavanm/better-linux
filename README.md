@@ -21,6 +21,13 @@ A comprehensive system information and tool management application for Linux, de
 - Run the application : `python3 better-linux.py`
 
 
+## Screencast
+
+<video width="640" height="480" controls>
+  <source src="screenshots/screencast.webm" type="video/webm">
+  Your browser does not support the video tag.
+</video>
+
 
 ## 📸 Screenshots
 
