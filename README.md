@@ -22,11 +22,12 @@ A comprehensive system information and tool management application for Linux, de
 
 
 ## Screencast
+![Screencast](screenshots/screencast-a.gif)
+![Screencast](screenshots/screencast.gif)
 
-<video width="640" height="480" controls>
-  <source src="screenshots/screencast.webm" type="video/webm">
-  Your browser does not support the video tag.
-</video>
+## Demo Video
+
+[![Demo Video](https://img.youtube.com/vi/DG4Lq26CtEE/0.jpg)](https://www.youtube.com/watch?v=DG4Lq26CtEE)
 
 
 ## 📸 Screenshots
